@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RDMS-AI — Regulatory Document Automation Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#131B2B;
+    --ink-soft:#28324A;
+    --paper:#F2F4F3;
+    --paper-raised:#FFFFFF;
+    --line:#C9D0D2;
+    --line-soft:#DEE3E4;
+    --muted:#5B6472;
+    --teal:#0E7C86;
+    --teal-deep:#0A5C64;
+    --teal-tint:#E3EFEE;
+    --rust:#B8622C;
+    --rust-tint:#F5E8DE;
+    --green:#2E7D4F;
+    --green-tint:#E5F0E8;
+    --radius:2px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans',sans-serif;
+    font-size:16px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; scroll-behavior:auto !important;}
+  }
+  h1,h2,h3{font-family:'Source Serif 4',serif; margin:0; letter-spacing:-0.01em;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  a{color:inherit;}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 32px;}
+  @media (max-width:640px){ .wrap{padding:0 18px;} }
+
+  /* ---------- controlled-document header strip ---------- */
+  .doc-header{
+    background:var(--ink);
+    color:#DCE3E6;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    letter-spacing:0.04em;
+    padding:9px 0;
+    border-bottom:1px solid #000;
+  }
+  .doc-header .wrap{display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;}
+  .doc-header span{opacity:0.82;}
+  .doc-header .status{color:#6FD1C6; opacity:1; font-weight:600;}
+
+  /* ---------- nav / masthead ---------- */
+  .masthead{
+    border-bottom:1px solid var(--line);
+    padding:22px 0;
+    background:var(--paper-raised);
+  }
+  .masthead .wrap{display:flex; align-items:center; justify-content:space-between;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand .mark{
+    width:30px; height:30px; border:1.5px solid var(--ink); border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Source Serif 4',serif; font-weight:600; font-size:14px;
+  }
+  .brand .name{font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:0.02em;}
+  .brand .name b{font-weight:600;}
+  .nav-tag{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); border:1px solid var(--line); padding:5px 10px; border-radius:20px;}
+
+  /* ---------- hero ---------- */
+  .hero{padding:76px 0 60px; border-bottom:1px solid var(--line);}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.12em; text-transform:uppercase;
+    color:var(--teal-deep); margin-bottom:18px; display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{content:""; width:26px; height:1px; background:var(--teal);}
+  .hero h1{font-size:clamp(32px,4.6vw,54px); font-weight:600; line-height:1.08; max-width:16ch;}
+  .hero h1 em{font-style:italic; color:var(--teal-deep);}
+  .hero .sub{max-width:56ch; margin-top:22px; font-size:17px; color:var(--ink-soft);}
+  .hero .sub b{color:var(--ink); font-weight:600;}
+
+  .stat-strip{
+    margin-top:44px; display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--line); border-left:1px solid var(--line);
+  }
+  .stat-strip .cell{border-right:1px solid var(--line); border-bottom:1px solid var(--line); padding:20px 20px 18px;}
+  .stat-strip .num{font-family:'Source Serif 4',serif; font-size:30px; font-weight:600; color:var(--teal-deep);}
+  .stat-strip .lbl{font-size:12.5px; color:var(--muted); margin-top:5px; line-height:1.35;}
+  @media (max-width:760px){ .stat-strip{grid-template-columns:repeat(2,1fr);} }
+
+  /* ---------- section shell ---------- */
+  section{padding:64px 0;}
+  .section-head{display:flex; justify-content:space-between; align-items:flex-end; gap:24px; margin-bottom:36px; flex-wrap:wrap;}
+  .section-num{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted); letter-spacing:0.08em;}
+  .section-head h2{font-size:clamp(24px,3vw,32px); font-weight:600; margin-top:6px;}
+  .section-head p{max-width:52ch; color:var(--muted); font-size:14.5px; margin-top:8px;}
+
+  /* ---------- problem cards ---------- */
+  .problem-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line);}
+  .problem-card{background:var(--paper-raised); padding:26px 24px 24px;}
+  .problem-card .pnum{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--rust); letter-spacing:0.06em;}
+  .problem-card .pstat{font-family:'Source Serif 4',serif; font-size:26px; font-weight:600; margin-top:12px; color:var(--ink);}
+  .problem-card .ptitle{font-weight:600; margin-top:6px; font-size:14.5px;}
+  .problem-card .ptext{color:var(--muted); font-size:13.5px; margin-top:8px; line-height:1.55;}
+  @media (max-width:860px){ .problem-grid{grid-template-columns:1fr;} }
+
+  /* ---------- pipeline (signature element) ---------- */
+  .pipeline-panel{border:1px solid var(--line); background:var(--paper-raised); padding:36px 32px;}
+  .pipeline-toggle{display:inline-flex; border:1px solid var(--line); border-radius:20px; overflow:hidden; margin-bottom:34px;}
+  .pipeline-toggle button{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.03em; padding:8px 18px; border:none; background:transparent;
+    cursor:pointer; color:var(--muted);
+  }
+  .pipeline-toggle button.active{background:var(--ink); color:#fff;}
+
+  .pipeline{display:grid; grid-template-columns:1fr 90px 1.15fr 90px 1.3fr; align-items:center; gap:0;}
+  @media (max-width:920px){ .pipeline{grid-template-columns:1fr; gap:20px;} .pipeline .connector{display:none;} }
+
+  .p-col{display:flex; flex-direction:column; gap:10px;}
+  .p-card{
+    border:1px solid var(--line-soft); background:var(--paper); padding:12px 14px; font-size:13px; position:relative;
+  }
+  .p-card .k{font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); letter-spacing:0.05em; text-transform:uppercase;}
+  .p-card .v{font-weight:600; margin-top:3px;}
+  .p-card.manual{border-left:3px solid var(--rust);}
+  .p-card.ai{border-left:3px solid var(--teal);}
+
+  .engine-card{
+    border:1.5px solid var(--ink); background:var(--ink); color:#fff; padding:26px 18px; text-align:center; position:relative;
+  }
+  .engine-card .k{font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.08em; color:#8FE3D8; text-transform:uppercase;}
+  .engine-card .v{font-family:'Source Serif 4',serif; font-size:19px; margin-top:8px; font-weight:600;}
+  .engine-card .d{font-size:12px; color:#B7C1CC; margin-top:8px; line-height:1.5;}
+
+  .connector{position:relative; height:2px; background:var(--line-soft); margin:0 6px;}
+  .connector .dot{
+    position:absolute; top:-3px; width:8px; height:8px; border-radius:50%; background:var(--teal);
+    animation:flow 2.4s linear infinite;
+  }
+  .connector .dot:nth-child(2){animation-delay:0.8s;}
+  .connector .dot:nth-child(3){animation-delay:1.6s;}
+  @keyframes flow{ from{left:-4px; opacity:0;} 10%{opacity:1;} 90%{opacity:1;} to{left:100%; opacity:0;} }
+  .manual-mode .connector .dot{background:var(--rust); animation-duration:4.6s;}
+
+  /* ---------- ledger (interactive) ---------- */
+  .ledger-wrap{margin-top:56px;}
+  .ledger-top{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:14px;}
+  .ledger-top h3{font-size:17px; font-weight:600; font-family:'Source Serif 4',serif;}
+  .run-btn{
+    font-family:'IBM Plex Mono',monospace; font-size:12.5px; letter-spacing:0.03em; background:var(--teal-deep); color:#fff;
+    border:none; padding:11px 20px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:background .15s;
+  }
+  .run-btn:hover{background:var(--ink);}
+  .run-btn:disabled{opacity:0.6; cursor:default;}
+  .run-btn .spin{width:11px; height:11px; border:2px solid rgba(255,255,255,0.4); border-top-color:#fff; border-radius:50%; display:none;}
+  .run-btn.loading .spin{display:inline-block; animation:spin 0.7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  table.ledger{width:100%; border-collapse:collapse; font-size:13.5px;}
+  table.ledger thead th{
+    text-align:left; font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.06em; text-transform:uppercase;
+    color:var(--muted); border-bottom:1px solid var(--ink); padding:0 12px 10px;
+  }
+  table.ledger td{padding:14px 12px; border-bottom:1px solid var(--line-soft); vertical-align:middle;}
+  table.ledger tbody tr{transition:background .2s;}
+  table.ledger tbody tr:hover{background:var(--paper);}
+  .doc-id{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--muted);}
+  .doc-name{font-weight:600;}
+  .bar-track{position:relative; height:7px; background:var(--line-soft); width:100%; min-width:120px; border-radius:20px; overflow:hidden;}
+  .bar-fill{position:absolute; left:0; top:0; height:100%; border-radius:20px; width:0%; transition:width 1.1s cubic-bezier(.22,.9,.3,1);}
+  .bar-fill.manual{background:var(--rust); opacity:0.9;}
+  .bar-fill.ai{background:var(--teal);}
+  .bar-row{display:flex; align-items:center; gap:8px; margin-bottom:5px;}
+  .bar-row:last-child{margin-bottom:0;}
+  .bar-label{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--muted); width:70px; flex-shrink:0;}
+  .bar-val{font-family:'IBM Plex Mono',monospace; font-size:10.5px; width:44px; text-align:right; flex-shrink:0;}
+  .stamp{
+    font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.05em; padding:4px 8px; border:1px solid; display:inline-block;
+  }
+  .stamp.draft{color:var(--rust); border-color:var(--rust);}
+  .stamp.qc{color:#8A6D1F; border-color:#8A6D1F;}
+  .stamp.final{color:var(--green); border-color:var(--green);}
+
+  .scan-line{
+    position:absolute; left:0; top:0; height:100%; width:2px; background:var(--teal); opacity:0; pointer-events:none;
+  }
+  .ledger-table-wrap{position:relative; overflow-x:auto;}
+  .ledger-table-wrap.scanning .scan-line{opacity:0.9; animation:scan 1.4s linear;}
+  @keyframes scan{from{left:0%;} to{left:100%;}}
+
+  .result-panel{
+    margin-top:0; border:1px solid var(--line); border-top:none; background:var(--teal-tint); padding:18px 22px;
+    display:grid; grid-template-columns:repeat(3,1fr); gap:24px; opacity:0; max-height:0; overflow:hidden; transition:opacity .4s ease, padding .4s ease;
+  }
+  .result-panel.show{opacity:1; max-height:200px; padding:22px;}
+  .result-panel .rk{font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--teal-deep);}
+  .result-panel .rv{font-family:'Source Serif 4',serif; font-size:26px; font-weight:600; margin-top:6px;}
+  .result-panel .rd{font-size:12px; color:var(--ink-soft); margin-top:4px;}
+  @media (max-width:700px){ .result-panel{grid-template-columns:1fr;} }
+
+  /* ---------- timeline compare ---------- */
+  .timeline-panel{border:1px solid var(--line); background:var(--paper-raised); padding:34px 30px;}
+  .tl-legend{display:flex; gap:22px; font-size:12.5px; color:var(--muted); margin-bottom:26px; font-family:'IBM Plex Mono',monospace;}
+  .tl-legend .sw{display:inline-block; width:10px; height:10px; margin-right:6px; vertical-align:-1px;}
+  .tl-legend .sw.manual{background:var(--rust);}
+  .tl-legend .sw.ai{background:var(--teal);}
+  .tl-row{padding:16px 0; border-bottom:1px solid var(--line-soft);}
+  .tl-row:last-child{border-bottom:none;}
+  .tl-row .tl-name{font-weight:600; font-size:14px; margin-bottom:10px;}
+  .tl-row .tl-name .save{color:var(--teal-deep); font-family:'IBM Plex Mono',monospace; font-size:11.5px; font-weight:400; margin-left:8px;}
+
+  /* ---------- error trend chart ---------- */
+  .trend-panel{border:1px solid var(--line); background:var(--paper-raised); padding:34px 30px 24px; display:grid; grid-template-columns:1.1fr 1fr; gap:40px;}
+  @media (max-width:860px){ .trend-panel{grid-template-columns:1fr;} }
+  .trend-chart{display:flex; align-items:flex-end; gap:18px; height:200px; border-bottom:1px solid var(--ink); padding-bottom:0;}
+  .trend-bar-col{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;}
+  .trend-bar{width:100%; max-width:46px; background:var(--rust); border-radius:2px 2px 0 0; transition:height 1s cubic-bezier(.22,.9,.3,1), background 1s;}
+  .trend-bar-col .tv{font-family:'IBM Plex Mono',monospace; font-size:11px; margin-bottom:6px;}
+  .trend-bar-col .tl{font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); margin-top:8px;}
+  .trend-side{display:flex; flex-direction:column; justify-content:center;}
+  .trend-side h3{font-size:16px; margin-bottom:10px;}
+  .trend-side p{font-size:13.5px; color:var(--muted); line-height:1.6;}
+  .trend-side .big{font-family:'Source Serif 4',serif; font-size:38px; color:var(--green); font-weight:600; margin-top:14px;}
+
+  /* ---------- industry context ---------- */
+  .context-grid{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line);}
+  @media (max-width:760px){ .context-grid{grid-template-columns:1fr;} }
+  .context-card{background:var(--paper-raised); padding:28px 26px;}
+  .context-card .tag{font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--muted);}
+  .context-card h3{font-size:18px; margin-top:10px; font-weight:600;}
+  .context-card p{font-size:13.5px; color:var(--ink-soft); margin-top:10px; line-height:1.6;}
+
+  /* ---------- footer ---------- */
+  footer{border-top:1px solid var(--line); padding:44px 0 30px; margin-top:20px;}
+  .foot-cta{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; padding-bottom:26px; border-bottom:1px solid var(--line-soft); margin-bottom:20px;}
+  .foot-cta h3{font-size:22px; max-width:20ch;}
+  .foot-cta .foot-note{color:var(--muted); font-size:13.5px; margin-top:8px; max-width:44ch;}
+  .foot-btn{font-family:'IBM Plex Mono',monospace; font-size:13px; background:var(--ink); color:#fff; padding:13px 24px; border:none; cursor:pointer; white-space:nowrap;}
+  .foot-meta{display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted);}
+
+  ::selection{background:var(--teal); color:#fff;}
+</style>
+</head>
+<body>
+
+  <div class="doc-header">
+    <div class="wrap">
+      <span>DOC ID: RDMS-AI/PORTFOLIO/2026&nbsp;&nbsp;·&nbsp;&nbsp;REV 1.3</span>
+      <span class="status">● LIVE SAMPLE — ILLUSTRATIVE DATA</span>
+      <span>CLASSIFICATION: PORTFOLIO DEMONSTRATION</span>
+    </div>
+  </div>
+
+  <header class="masthead">
+    <div class="wrap">
+      <div class="brand">
+        <div class="mark">R</div>
+        <div class="name"><b>RDMS-AI</b> / Regulatory Document Automation</div>
+      </div>
+      <div class="nav-tag">Clinical Trials &amp; Life Sciences AI — Case Study</div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="wrap">
+      <div class="eyebrow">Regulatory Affairs &nbsp;/&nbsp; NDA–BLA Preparation</div>
+      <h1>From trial data to submission-ready documents, <em>without the six-month draft.</em></h1>
+      <p class="sub">CSRs, Investigator's Brochures, and NDA/BLA modules today are built by regulatory writers hand-assembling thousands of pages from raw trial data. This dashboard walks through where an AI layer removes the manual drafting and cross-checking burden — <b>with illustrative figures</b> modeled on the kind of gains reported by platforms like WinWire's WinCDA and the Gilead–Veeva agentic AI initiative.</p>
+
+      <div class="stat-strip">
+        <div class="cell"><div class="num">60%</div><div class="lbl">Faster document preparation, first draft to QC-ready</div></div>
+        <div class="cell"><div class="num">52 → 0</div><div class="lbl">Flagged cross-document inconsistencies, per submission</div></div>
+        <div class="cell"><div class="num">$1.4M</div><div class="lbl">Average regulatory writing cost avoided per NDA</div></div>
+        <div class="cell"><div class="num">9 wks</div><div class="lbl">Median timeline compressed out of submission prep</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="section-num">01 — THE BOTTLENECK</div>
+          <h2>What regulatory writing teams are up against</h2>
+        </div>
+        <p>Every NDA/BLA submission is a race against a document backlog that grows with every trial readout.</p>
+      </div>
+
+      <div class="problem-grid">
+        <div class="problem-card">
+          <div class="pnum">PAIN 01</div>
+          <div class="pstat">4–6 months</div>
+          <div class="ptitle">Manual drafting cycles</div>
+          <div class="ptext">Writing a CSR, refreshing an IB, or assembling NDA modules 2.5–2.7 from scratch typically runs four to six months per document, start to sign-off.</div>
+        </div>
+        <div class="problem-card">
+          <div class="pnum">PAIN 02</div>
+          <div class="pstat">3,000+ pages</div>
+          <div class="ptitle">Data volume per submission</div>
+          <div class="ptext">Writers work through listings, tables, safety narratives, and protocol amendments by hand to find the numbers that belong in each section.</div>
+        </div>
+        <div class="problem-card">
+          <div class="pnum">PAIN 03</div>
+          <div class="pstat">$2–3M+ delay cost</div>
+          <div class="ptitle">Consistency errors &amp; delay risk</div>
+          <div class="ptext">A mismatched adverse-event count between CSR and IB, caught late, can trigger a query cycle — and submission delays scale into the billions industry-wide.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="section-num">02 — HOW IT WORKS</div>
+          <h2>One AI layer, reading every source once</h2>
+        </div>
+        <p>Toggle the process to see what changes when structured trial data feeds an AI drafting engine instead of a writer's desk.</p>
+      </div>
+
+      <div class="pipeline-panel" id="pipelinePanel">
+        <div class="pipeline-toggle">
+          <button class="active" data-mode="ai" id="btnAi">AI-ASSISTED PROCESS</button>
+          <button data-mode="manual" id="btnManual">MANUAL PROCESS</button>
+        </div>
+
+        <div class="pipeline" id="pipeline">
+          <div class="p-col">
+            <div class="p-card ai" id="src1"><div class="k">Source</div><div class="v">EDC / clinical data</div></div>
+            <div class="p-card ai" id="src2"><div class="k">Source</div><div class="v">Safety database (SAE)</div></div>
+            <div class="p-card ai" id="src3"><div class="k">Source</div><div class="v">Protocol &amp; SAP</div></div>
+            <div class="p-card ai" id="src4"><div class="k">Source</div><div class="v">Prior document versions</div></div>
+          </div>
+
+          <div class="connector"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+
+          <div class="engine-card" id="engineCard">
+            <div class="k">Processing layer</div>
+            <div class="v" id="engineTitle">AI Drafting Engine</div>
+            <div class="d" id="engineDesc">Reads structured data once, drafts every section in parallel, and checks every document against every other document.</div>
+          </div>
+
+          <div class="connector"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+
+          <div class="p-col">
+            <div class="p-card ai"><div class="k">Output</div><div class="v">Clinical Study Report</div></div>
+            <div class="p-card ai"><div class="k">Output</div><div class="v">IB Annual Update</div></div>
+            <div class="p-card ai"><div class="k">Output</div><div class="v">NDA Module 2.5 / 2.7</div></div>
+            <div class="p-card ai"><div class="k">Output</div><div class="v">NDA Module 1</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ledger-wrap">
+        <div class="ledger-top">
+          <h3>Document Control Ledger — Study RDX-3102</h3>
+          <button class="run-btn" id="runCheck"><span class="spin"></span><span id="runLabel">Run AI Consistency Check</span></button>
+        </div>
+
+        <div class="ledger-table-wrap" id="ledgerTableWrap">
+          <div class="scan-line"></div>
+          <table class="ledger">
+            <thead>
+              <tr>
+                <th>Document</th>
+                <th>Control ID</th>
+                <th style="min-width:220px;">Prep time — manual vs AI-assisted</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="ledgerBody">
+              <!-- rows injected by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="result-panel" id="resultPanel">
+          <div>
+            <div class="rk">Inconsistencies flagged</div>
+            <div class="rv"><span id="rFlagged">0</span></div>
+            <div class="rd">across CSR narrative, IB safety tables &amp; data listings</div>
+          </div>
+          <div>
+            <div class="rk">Auto-resolved by AI</div>
+            <div class="rv"><span id="rResolved">0</span></div>
+            <div class="rd">terminology, numeric &amp; cross-reference mismatches</div>
+          </div>
+          <div>
+            <div class="rk">Routed to medical writer</div>
+            <div class="rv"><span id="rRouted">0</span></div>
+            <div class="rd">judgment calls needing human sign-off</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="section-num">03 — TIMELINE IMPACT</div>
+          <h2>Weeks removed from the submission calendar</h2>
+        </div>
+        <p>Same document set, measured from data lock to QC-ready draft.</p>
+      </div>
+
+      <div class="timeline-panel">
+        <div class="tl-legend"><span><span class="sw manual"></span>Manual</span><span><span class="sw ai"></span>AI-assisted</span></div>
+        <div id="timelineRows"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="section-num">04 — QUALITY IMPACT</div>
+          <h2>Consistency errors, draft over draft</h2>
+        </div>
+        <p>Flagged cross-document inconsistencies across five review cycles of the same submission package.</p>
+      </div>
+
+      <div class="trend-panel">
+        <div>
+          <div class="trend-chart" id="trendChart"></div>
+        </div>
+        <div class="trend-side">
+          <h3>Where the errors used to hide</h3>
+          <p>Adverse-event counts that drift between the CSR and the IB. A dosing figure updated in one module but not another. Terminology that shifts between writers. The AI layer checks every document against every other document on every pass — not just at final QC.</p>
+          <div class="big">100% eliminated</div>
+          <p style="margin-top:2px;">by the final AI-assisted QC pass, illustrative case above.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="section-num">05 — INDUSTRY CONTEXT</div>
+          <h2>This pattern is already moving into practice</h2>
+        </div>
+      </div>
+      <div class="context-grid">
+        <div class="context-card">
+          <div class="tag">Vendor platform</div>
+          <h3>WinWire — WinCDA</h3>
+          <p>WinCDA applies this same read-the-data-once, draft-everywhere approach to regulatory content generation — automating first drafts directly from structured clinical data rather than starting each document from a blank page.</p>
+        </div>
+        <div class="context-card">
+          <div class="tag">Industry partnership</div>
+          <h3>Gilead × Veeva — Agentic AI</h3>
+          <p>Gilead and Veeva's agentic AI collaboration points at the same direction the industry is heading: AI agents working across clinical and regulatory systems to move data into submission-ready content faster.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <div class="foot-cta">
+        <div>
+          <h3>Built as a portfolio sample for clinical-trial AI &amp; regulatory automation work.</h3>
+          <div class="foot-note">All figures on this page are illustrative, modeled on publicly reported directional impact — not client data. Available for freelance engagements across trial data strategy, regulatory document automation, and AI-enabled CSR/IB/NDA workflows.</div>
+        </div>
+        <button class="foot-btn">Get in touch →</button>
+      </div>
+      <div class="foot-meta">
+        <span>RDMS-AI/PORTFOLIO/2026 · Rev 1.3</span>
+        <span>Prepared for freelance portfolio use</span>
+        <span>Page 1 of 1</span>
+      </div>
+    </div>
+  </footer>
+
+<script>
+(function(){
+  // ---------------- Ledger data ----------------
+  var docs = [
+    {name:"Clinical Study Report", id:"CSR-3102-v4", manual:14, ai:5, status:"final"},
+    {name:"Investigator's Brochure — Annual Update", id:"IB-ANN-2026-v2", manual:6, ai:2, status:"final"},
+    {name:"NDA Module 2.5 — Clinical Overview", id:"M2.5-3102-v3", manual:8, ai:3, status:"qc"},
+    {name:"NDA Module 2.7 — Clinical Summary", id:"M2.7-3102-v3", manual:10, ai:4, status:"qc"},
+    {name:"NDA Module 1 — Administrative", id:"M1-3102-v2", manual:3, ai:1, status:"draft"}
+  ];
+  var maxWeeks = 14;
+  var stampLabel = {final:"FINAL", qc:"QC REVIEW", draft:"DRAFT"};
+
+  var body = document.getElementById('ledgerBody');
+  docs.forEach(function(d, i){
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><div class="doc-name">'+d.name+'</div></td>'+
+      '<td><span class="doc-id">'+d.id+'</span></td>'+
+      '<td>'+
+        '<div class="bar-row"><span class="bar-label">Manual</span><div class="bar-track"><div class="bar-fill manual" id="mbar'+i+'"></div></div><span class="bar-val">'+d.manual+' wk</span></div>'+
+        '<div class="bar-row"><span class="bar-label">AI-assisted</span><div class="bar-track"><div class="bar-fill ai" id="abar'+i+'"></div></div><span class="bar-val">'+d.ai+' wk</span></div>'+
+      '</td>'+
+      '<td><span class="stamp '+d.status+'">'+stampLabel[d.status]+'</span></td>';
+    body.appendChild(tr);
+  });
+
+  function animateLedgerBars(){
+    docs.forEach(function(d,i){
+      var mb = document.getElementById('mbar'+i);
+      var ab = document.getElementById('abar'+i);
+      if(mb) mb.style.width = (d.manual/maxWeeks*100)+'%';
+      if(ab) ab.style.width = (d.ai/maxWeeks*100)+'%';
+    });
+  }
+
+  // ---------------- Timeline section ----------------
+  var tlWrap = document.getElementById('timelineRows');
+  docs.forEach(function(d,i){
+    var savePct = Math.round((1-d.ai/d.manual)*100);
+    var row = document.createElement('div');
+    row.className = 'tl-row';
+    row.innerHTML =
+      '<div class="tl-name">'+d.name+'<span class="save">'+savePct+'% faster</span></div>'+
+      '<div class="bar-row"><span class="bar-label">Manual</span><div class="bar-track"><div class="bar-fill manual" id="tlm'+i+'"></div></div><span class="bar-val">'+d.manual+' wk</span></div>'+
+      '<div class="bar-row"><span class="bar-label">AI</span><div class="bar-track"><div class="bar-fill ai" id="tla'+i+'"></div></div><span class="bar-val">'+d.ai+' wk</span></div>';
+    tlWrap.appendChild(row);
+  });
+  function animateTimelineBars(){
+    docs.forEach(function(d,i){
+      var m = document.getElementById('tlm'+i);
+      var a = document.getElementById('tla'+i);
+      if(m) m.style.width = (d.manual/maxWeeks*100)+'%';
+      if(a) a.style.width = (d.ai/maxWeeks*100)+'%';
+    });
+  }
+
+  // ---------------- Error trend chart ----------------
+  var trend = [
+    {label:"Draft v1", value:52},
+    {label:"Draft v2", value:31},
+    {label:"Draft v3", value:14},
+    {label:"AI QC pass", value:2},
+    {label:"Final", value:0}
+  ];
+  var maxErr = 52;
+  var chart = document.getElementById('trendChart');
+  trend.forEach(function(t,i){
+    var col = document.createElement('div');
+    col.className = 'trend-bar-col';
+    var bar = document.createElement('div');
+    bar.className = 'trend-bar';
+    bar.id = 'tbar'+i;
+    bar.style.height = '0px';
+    if(t.value === 0){ bar.style.background = 'var(--green)'; }
+    else if(i >= 3){ bar.style.background = 'var(--teal)'; }
+    col.innerHTML = '<div class="tv">'+t.value+'</div>';
+    col.appendChild(bar);
+    var lbl = document.createElement('div');
+    lbl.className = 'tl';
+    lbl.textContent = t.label;
+    col.appendChild(lbl);
+    chart.appendChild(col);
+  });
+  function animateTrend(){
+    trend.forEach(function(t,i){
+      var b = document.getElementById('tbar'+i);
+      if(b) b.style.height = Math.max((t.value/maxErr*170), t.value===0?4:10)+'px';
+    });
+  }
+
+  // ---------------- Scroll-triggered animation ----------------
+  var animated = false;
+  function tryAnimate(){
+    if(animated) return;
+    var panel = document.querySelector('.timeline-panel');
+    if(!panel) return;
+    var r = panel.getBoundingClientRect();
+    if(r.top < window.innerHeight * 0.85){
+      animated = true;
+      animateLedgerBars();
+      animateTimelineBars();
+      animateTrend();
+    }
+  }
+  window.addEventListener('scroll', tryAnimate);
+  window.addEventListener('load', function(){ setTimeout(tryAnimate, 200); });
+
+  // ---------------- Pipeline toggle ----------------
+  var btnAi = document.getElementById('btnAi');
+  var btnManual = document.getElementById('btnManual');
+  var pipelinePanel = document.getElementById('pipelinePanel');
+  var engineTitle = document.getElementById('engineTitle');
+  var engineDesc = document.getElementById('engineDesc');
+  var srcCards = document.querySelectorAll('.p-card');
+
+  function setMode(mode){
+    if(mode === 'ai'){
+      btnAi.classList.add('active'); btnManual.classList.remove('active');
+      pipelinePanel.classList.remove('manual-mode');
+      engineTitle.textContent = 'AI Drafting Engine';
+      engineDesc.textContent = 'Reads structured data once, drafts every section in parallel, and checks every document against every other document.';
+      srcCards.forEach(function(c){ c.classList.remove('manual'); c.classList.add('ai'); });
+    } else {
+      btnManual.classList.add('active'); btnAi.classList.remove('active');
+      pipelinePanel.classList.add('manual-mode');
+      engineTitle.textContent = 'Regulatory Writing Team';
+      engineDesc.textContent = 'Each writer reads the same raw data separately, drafts sections by hand, then cross-checks documents manually against each other.';
+      srcCards.forEach(function(c){ c.classList.remove('ai'); c.classList.add('manual'); });
+    }
+  }
+  btnAi.addEventListener('click', function(){ setMode('ai'); });
+  btnManual.addEventListener('click', function(){ setMode('manual'); });
+
+  // ---------------- Consistency check simulation ----------------
+  var runBtn = document.getElementById('runCheck');
+  var runLabel = document.getElementById('runLabel');
+  var tableWrap = document.getElementById('ledgerTableWrap');
+  var resultPanel = document.getElementById('resultPanel');
+  var rFlagged = document.getElementById('rFlagged');
+  var rResolved = document.getElementById('rResolved');
+  var rRouted = document.getElementById('rRouted');
+
+  function countUp(el, target, duration){
+    var start = 0;
+    var startTime = null;
+    function step(ts){
+      if(!startTime) startTime = ts;
+      var progress = Math.min((ts-startTime)/duration, 1);
+      el.textContent = Math.round(start + (target-start)*progress);
+      if(progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  runBtn.addEventListener('click', function(){
+    if(runBtn.classList.contains('loading')) return;
+    runBtn.classList.add('loading');
+    runBtn.disabled = true;
+    runLabel.textContent = 'Scanning documents…';
+    tableWrap.classList.add('scanning');
+    resultPanel.classList.remove('show');
+
+    setTimeout(function(){
+      tableWrap.classList.remove('scanning');
+      runBtn.classList.remove('loading');
+      runBtn.disabled = false;
+      runLabel.textContent = 'Run AI Consistency Check';
+      resultPanel.classList.add('show');
+      countUp(rFlagged, 47, 900);
+      countUp(rResolved, 44, 1100);
+      countUp(rRouted, 3, 700);
+    }, 1500);
+  });
+
+})();
+</script>
+</body>
+</html>

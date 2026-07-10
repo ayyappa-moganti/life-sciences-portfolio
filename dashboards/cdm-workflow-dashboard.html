@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinical Data Management Workflow — Interactive Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF;
+    --bg-alt:#F4F6F9;
+    --card:#FFFFFF;
+    --border:#E1E5EC;
+    --ink:#182430;
+    --ink-soft:#3B4656;
+    --muted:#697585;
+    --muted-light:#8B95A5;
+    --accent:#0E6E73;
+    --accent-dark:#0A4F53;
+    --accent-tint:#E7F1F1;
+    --good:#2F9560;
+    --warn:#C2862E;
+    --radius:8px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    font-size:16px;
+    line-height:1.5;
+  }
+  h1,h2,h3{font-family:'IBM Plex Sans', sans-serif; font-weight:700; margin:0; color:var(--ink); letter-spacing:-0.01em;}
+  .serif-num{font-family:'Source Serif 4', serif;}
+  .mono{font-family:'IBM Plex Mono', monospace;}
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.78rem;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--accent-dark);
+    display:flex;align-items:center;gap:10px;
+    font-weight:600;
+  }
+  .eyebrow::before{content:'';width:22px;height:2px;background:var(--accent);display:inline-block;border-radius:2px;}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 32px;}
+  section{padding:96px 0;position:relative;}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    min-height:66vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding:130px 0 60px;
+    background:linear-gradient(180deg, #FBFCFD 0%, #FFFFFF 100%);
+    border-bottom:1px solid var(--border);
+  }
+  .hero h1{
+    font-size:clamp(2.1rem,4vw,3.1rem);
+    line-height:1.18;
+    margin-top:20px;
+    max-width:840px;
+    font-weight:700;
+  }
+  .hero h1 .accent{color:var(--accent);}
+  .hero p.sub{
+    margin-top:22px;
+    font-size:1.15rem;
+    line-height:1.65;
+    color:var(--ink-soft);
+    max-width:620px;
+  }
+  .hero-meta{
+    margin-top:38px;
+    display:flex;
+    gap:44px;
+    flex-wrap:wrap;
+  }
+  .hero-meta .m-val{font-family:'Source Serif 4',serif;font-size:1.9rem;color:var(--accent-dark);font-weight:600;}
+  .hero-meta .m-lab{font-size:0.84rem;color:var(--muted);margin-top:4px;font-weight:500;}
+  .about-line{
+    margin-top:34px;
+    font-size:0.92rem;
+    color:var(--ink-soft);
+    max-width:640px;
+    line-height:1.65;
+    background:var(--accent-tint);
+    border-radius:8px;
+    padding:16px 20px;
+  }
+  .about-line b{color:var(--accent-dark);}
+  .disclaimer{
+    margin-top:20px;
+    font-size:0.8rem;
+    color:var(--muted);
+    max-width:520px;
+    line-height:1.65;
+    border-left:3px solid var(--border);
+    padding-left:16px;
+  }
+
+  /* ---------- STAGE NAV STRIP ---------- */
+  .stage-strip{
+    background:#FFFFFF;
+    padding:26px 0;
+    border-bottom:1px solid var(--border);
+    box-shadow:0 2px 10px rgba(20,30,45,0.04);
+    position:sticky;
+    top:0;
+    z-index:50;
+  }
+  .stage-track{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding-bottom:6px;
+  }
+  .stage-chip{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:9px 15px;
+    border-radius:20px;
+    border:1px solid var(--border);
+    cursor:pointer;
+    font-size:0.85rem;
+    font-weight:500;
+    color:var(--muted);
+    transition:all .2s;
+    white-space:nowrap;
+    background:#fff;
+  }
+  .stage-chip .dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;}
+  .stage-chip:hover{border-color:var(--accent);color:var(--ink);}
+  .stage-chip.active{
+    color:var(--ink);
+    border-color:var(--accent);
+    background:var(--accent-tint);
+    font-weight:600;
+  }
+  .stage-controls{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:18px;
+    gap:16px;
+  }
+  .play-btn{
+    font-family:'IBM Plex Sans',sans-serif;
+    font-size:0.86rem;
+    font-weight:600;
+    background:var(--ink);
+    border:1px solid var(--ink);
+    color:#fff;
+    padding:10px 18px;
+    border-radius:20px;
+    cursor:pointer;
+    letter-spacing:0.01em;
+    transition:background .2s;
+  }
+  .play-btn:hover{background:var(--accent-dark); border-color:var(--accent-dark);}
+  .progress-mini{
+    flex:1;
+    height:5px;
+    background:var(--bg-alt);
+    border-radius:3px;
+    overflow:hidden;
+    max-width:420px;
+  }
+  .progress-mini-fill{
+    height:100%;
+    background:var(--accent);
+    transition:width .4s ease;
+  }
+
+  /* ---------- WORKFLOW SECTION ---------- */
+  .sec-head{max-width:680px;margin-bottom:52px;}
+  .sec-head h2{font-size:clamp(1.7rem,3vw,2.2rem);margin-top:18px;}
+  .sec-head p{color:var(--muted);margin-top:16px;line-height:1.7;font-size:1.05rem;}
+
+  .workflow-layout{
+    display:grid;
+    grid-template-columns:360px 1fr;
+    gap:44px;
+    align-items:start;
+  }
+  .timeline{
+    position:relative;
+    padding-left:40px;
+  }
+  .timeline::before{
+    content:'';
+    position:absolute;
+    left:13px;top:6px;bottom:6px;
+    width:2px;
+    background:linear-gradient(180deg, #1F8A7A, #2E6FB8, #6B5FC4, #C24E86, #D06C89, #D99A34, #B8863B, #2F9560, #1F8A7A, #2E6FB8);
+    opacity:0.55;
+  }
+  .t-item{
+    position:relative;
+    padding:15px 16px 15px 20px;
+    margin-bottom:3px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:background .2s;
+    border:1px solid transparent;
+  }
+  .t-item:hover{background:var(--bg-alt);}
+  .t-item.active{background:var(--accent-tint); border-color:rgba(14,110,115,0.18);}
+  .t-item::before{
+    content:attr(data-n);
+    position:absolute;
+    left:-40px;
+    top:15px;
+    width:28px;height:28px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.7rem;
+    font-weight:700;
+    color:#fff;
+    background:var(--step-color, var(--accent));
+  }
+  .t-item .t-title{font-size:0.96rem;font-weight:600;color:var(--ink);}
+  .t-item .t-out{font-size:0.78rem;color:var(--muted);margin-top:5px;}
+  .t-item.active .t-title{color:var(--step-color);}
+
+  .stage-detail{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:36px 40px;
+    box-shadow:0 4px 22px rgba(20,30,45,0.05);
+  }
+  .sd-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:20px;
+    border-bottom:1px solid var(--border);
+    padding-bottom:24px;
+    margin-bottom:26px;
+  }
+  .sd-num{
+    font-family:'Source Serif 4',serif;
+    font-size:2.6rem;
+    font-weight:700;
+    color:var(--step-color, var(--accent));
+    line-height:1;
+  }
+  .sd-title{font-size:1.55rem;margin-top:8px;font-weight:700;}
+  .sd-badge{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.7rem;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    padding:7px 13px;
+    border-radius:20px;
+    color:#fff;
+    background:var(--step-color, var(--accent));
+    white-space:nowrap;
+    height:fit-content;
+    font-weight:600;
+  }
+  .sd-body{
+    display:grid;
+    grid-template-columns:1.2fr 1fr;
+    gap:40px;
+  }
+  .sd-activities ul{margin:0;padding-left:20px;}
+  .sd-activities li{
+    font-size:0.98rem;
+    line-height:1.85;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .sd-activities li::marker{color:var(--step-color, var(--accent));font-weight:700;}
+  .sd-side-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.7rem;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:12px;
+    font-weight:600;
+  }
+  .sd-output{
+    background:var(--bg-alt);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:22px;
+    font-size:1rem;
+    color:var(--ink);
+    font-weight:700;
+  }
+  .sd-output .desc{
+    font-weight:400;
+    font-size:0.86rem;
+    color:var(--muted);
+    margin-top:10px;
+    line-height:1.6;
+  }
+  /* KPI strip inside stage detail */
+  .sd-kpis{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+    margin-top:28px;
+    padding-top:26px;
+    border-top:1px solid var(--border);
+  }
+  .kpi-card{
+    background:var(--bg-alt);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:16px 16px;
+  }
+  .kpi-card .kv{
+    font-family:'Source Serif 4',serif;
+    font-size:1.5rem;
+    font-weight:700;
+    color:var(--step-color, var(--accent));
+    line-height:1.1;
+  }
+  .kpi-card .kl{
+    font-size:0.76rem;
+    color:var(--muted);
+    margin-top:6px;
+    line-height:1.4;
+  }
+  .sd-nav{
+    display:flex;
+    justify-content:space-between;
+    margin-top:28px;
+    gap:12px;
+  }
+  .sd-nav button{
+    flex:1;
+    font-family:'IBM Plex Sans';
+    font-size:0.86rem;
+    font-weight:600;
+    padding:13px 16px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:#fff;
+    color:var(--ink);
+    cursor:pointer;
+    transition:border-color .2s, background .2s;
+  }
+  .sd-nav button:hover{border-color:var(--accent); background:var(--accent-tint);}
+  .sd-nav button:disabled{opacity:0.35;cursor:not-allowed;}
+
+  /* ---------- STUDY HEALTH OVERVIEW ---------- */
+  .overview-kpi-row{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:18px;
+    margin-bottom:44px;
+  }
+  .ov-kpi{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:24px 22px;
+    box-shadow:0 4px 16px rgba(20,30,45,0.05);
+  }
+  .ov-kpi .val{font-family:'Source Serif 4',serif;font-size:2rem;font-weight:700;color:var(--accent-dark);}
+  .ov-kpi .lab{font-size:0.84rem;color:var(--muted);margin-top:6px;}
+  .charts-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:22px;
+  }
+  .chart-card{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:24px 24px 12px;
+    box-shadow:0 4px 16px rgba(20,30,45,0.05);
+  }
+  .chart-card h3{font-size:0.98rem;font-weight:600;margin-bottom:16px;}
+  .chart-wrap{position:relative;height:230px;}
+  .chart-note{font-size:0.78rem;color:var(--muted);margin-top:10px;}
+
+  /* ---- dependency-free chart primitives ---- */
+  .donut-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;}
+  .donut-center{
+    position:absolute;
+    top:50%;left:50%;
+    transform:translate(-50%,-56%);
+    text-align:center;
+  }
+  .donut-center .dv{font-family:'Source Serif 4',serif;font-size:1.4rem;font-weight:700;color:var(--ink);}
+  .donut-center .dl{font-size:0.7rem;color:var(--muted);margin-top:2px;}
+  .chart-legend{display:flex;gap:16px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
+  .chart-legend .li{display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--muted);}
+  .chart-legend .sw{width:10px;height:10px;border-radius:3px;flex:0 0 auto;}
+
+  .bar-chart{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:8px;
+    height:170px;
+    padding:0 4px;
+  }
+  .bar-group{
+    flex:1;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    gap:4px;
+    height:100%;
+  }
+  .bar{
+    width:40%;
+    border-radius:3px 3px 0 0;
+    transition:height .4s ease;
+    min-height:2px;
+  }
+  .bar-labels{
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    padding:0 4px;
+    margin-top:8px;
+  }
+  .bar-labels span{
+    flex:1;
+    text-align:center;
+    font-size:0.72rem;
+    color:var(--muted);
+  }
+
+  .hbar-chart{display:flex;flex-direction:column;gap:10px;height:100%;justify-content:center;}
+  .hbar-row{display:flex;align-items:center;gap:10px;}
+  .hbar-label{width:34px;flex:0 0 auto;font-size:0.72rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;}
+  .hbar-track{flex:1;height:12px;background:var(--bg-alt);border-radius:6px;overflow:hidden;}
+  .hbar-fill{height:100%;border-radius:6px;transition:width .5s ease;}
+  .hbar-val{width:36px;flex:0 0 auto;font-size:0.72rem;color:var(--muted);text-align:right;}
+
+  /* ---------- BOTTOM 4-COL ---------- */
+  .alt-section{background:var(--bg-alt);}
+
+  .quad-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:20px;
+  }
+  .quad-card{
+    background:#fff;
+    border-radius:10px;
+    padding:28px 24px;
+    box-shadow:0 4px 18px rgba(20,30,45,0.06);
+    border:1px solid var(--border);
+    border-top:3px solid var(--accent);
+  }
+  .quad-card h3{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.74rem;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:18px;
+    font-weight:700;
+  }
+  .quad-card ul{list-style:none;margin:0;padding:0;}
+  .quad-card li{
+    display:flex;
+    gap:11px;
+    align-items:flex-start;
+    font-size:0.9rem;
+    line-height:1.55;
+    margin-bottom:15px;
+    color:var(--ink);
+  }
+  .quad-card li:last-child{margin-bottom:0;}
+  .quad-card .qi{
+    flex:0 0 auto;
+    width:24px;height:24px;
+    border-radius:50%;
+    background:var(--accent-tint);
+    color:var(--accent-dark);
+    display:flex;align-items:center;justify-content:center;
+    font-size:0.65rem;
+    font-weight:700;
+    font-family:'IBM Plex Mono',monospace;
+    margin-top:1px;
+  }
+  .quad-card li b{display:block;font-weight:700;color:var(--ink);}
+  .quad-card li span.d{color:var(--muted);font-size:0.82rem;}
+
+  .activity-flow{
+    display:flex;
+    flex-wrap:wrap;
+    gap:9px;
+  }
+  .activity-pill{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.76rem;
+    font-weight:600;
+    padding:8px 14px;
+    border-radius:20px;
+    background:var(--accent-tint);
+    color:var(--accent-dark);
+    border:1px solid rgba(14,110,115,0.2);
+  }
+
+  /* ---------- FOOTER ---------- */
+  footer{padding:56px 0 48px;border-top:1px solid var(--border); background:#fff;}
+  .foot-grid{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:20px;}
+  .foot-grid .name{font-family:'Source Serif 4',serif;font-size:1.15rem;font-weight:600;color:var(--ink);}
+  .foot-grid .role{font-size:0.88rem;color:var(--muted);margin-top:4px;}
+  .foot-note{font-size:0.8rem;color:var(--muted);max-width:440px;line-height:1.65;text-align:right;}
+
+  @media (max-width:920px){
+    .workflow-layout{grid-template-columns:1fr;}
+    .sd-body{grid-template-columns:1fr;}
+    .sd-kpis{grid-template-columns:repeat(2,1fr);}
+    .quad-grid{grid-template-columns:repeat(2,1fr);}
+    .overview-kpi-row{grid-template-columns:repeat(2,1fr);}
+    .charts-grid{grid-template-columns:1fr;}
+    .foot-note{text-align:left;}
+  }
+  @media (max-width:560px){
+    .quad-grid{grid-template-columns:1fr;}
+    .sd-kpis{grid-template-columns:1fr 1fr;}
+    .stage-detail{padding:28px 24px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Interactive Workflow — Clinical Data Management</div>
+    <h1>From first patient <span class="accent">data point</span><br>to a locked, analysis-ready database.</h1>
+    <p class="sub">Ten stages turn raw site data into a database regulators and biostatisticians can trust — walk through each one, its activities, and what it hands off to the next.</p>
+    <div class="hero-meta">
+      <div><div class="m-val">10</div><div class="m-lab">CDM stages</div></div>
+      <div><div class="m-val">5</div><div class="m-lab">core principles</div></div>
+      <div><div class="m-val">SDTM/ADaM</div><div class="m-lab">final handoff format</div></div>
+    </div>
+    <div class="about-line"><b>About this project —</b> built by a Business Analyst working across clinical data and regulatory systems in pharma, to show how a CDM workflow translates into a stakeholder-facing dashboard: not just the process steps, but the metrics a data manager would actually track at each stage.</div>
+    <div class="disclaimer">Illustrative dashboard built for portfolio purposes. All metrics shown are representative dummy data — not figures from any specific sponsor or trial.</div>
+  </div>
+</section>
+
+<!-- ============ STAGE NAV (sticky) ============ -->
+<section class="stage-strip" style="padding-top:22px;padding-bottom:22px;">
+  <div class="wrap">
+    <div class="stage-track" id="stageTrack"></div>
+    <div class="stage-controls">
+      <button class="play-btn" id="playBtn">▶  Walk through all 10 stages</button>
+      <div class="progress-mini"><div class="progress-mini-fill" id="progressFill" style="width:10%;"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WORKFLOW EXPLORER ============ -->
+<section id="workflow">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">The Workflow</div>
+      <h2>Ten stages, one continuous chain of custody for the data.</h2>
+      <p>Click any stage on the left, or in the strip above, to see its activities, deliverable, and the metrics a data manager would track at that point.</p>
+    </div>
+    <div class="workflow-layout">
+      <div class="timeline" id="timelineList"></div>
+      <div class="stage-detail" id="stageDetail"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STUDY HEALTH OVERVIEW ============ -->
+<section class="alt-section" id="overview">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">Study Health Overview</div>
+      <h2>How the study looks right now, end to end</h2>
+      <p>A rollup across all ten stages — the kind of view a CDM lead would bring to a sponsor status call.</p>
+    </div>
+    <div class="overview-kpi-row">
+      <div class="ov-kpi"><div class="val">418 / 450</div><div class="lab">subjects enrolled vs. planned</div></div>
+      <div class="ov-kpi"><div class="val">96%</div><div class="lab">source data verified overall</div></div>
+      <div class="ov-kpi"><div class="val">12</div><div class="lab">open queries, down from a peak of 210</div></div>
+      <div class="ov-kpi"><div class="val">3.2 days</div><div class="lab">average query resolution time</div></div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>Enrollment funnel</h3>
+        <div class="chart-wrap" id="enrollChart"></div>
+        <div class="chart-note">462 screened → 418 enrolled → 44 screen failures</div>
+      </div>
+      <div class="chart-card">
+        <h3>Query volume by month</h3>
+        <div class="chart-wrap" id="queryChart"></div>
+        <div class="chart-note">Opened vs. closed queries, last 6 months</div>
+      </div>
+      <div class="chart-card">
+        <h3>Stage completion</h3>
+        <div class="chart-wrap" id="stageChart"></div>
+        <div class="chart-note">% complete per CDM stage, current cycle</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BOTTOM QUAD ============ -->
+<section id="foundations">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">Foundations</div>
+      <h2>The principles, activities, outcomes, and tools behind it</h2>
+      <p>What CDM is built on, and what it's usually run with.</p>
+    </div>
+    <div class="quad-grid">
+      <div class="quad-card">
+        <h3>CDM Principles</h3>
+        <ul>
+          <li><span class="qi">DQ</span><div><b>Data Quality</b><span class="d">Accurate, complete, consistent</span></div></li>
+          <li><span class="qi">DI</span><div><b>Data Integrity</b><span class="d">Reliable, traceable, ALCOA+ compliant</span></div></li>
+          <li><span class="qi">TL</span><div><b>Timeliness</b><span class="d">Data available when needed</span></div></li>
+          <li><span class="qi">CF</span><div><b>Confidentiality</b><span class="d">Protect patient privacy and study data</span></div></li>
+          <li><span class="qi">CP</span><div><b>Compliance</b><span class="d">Follow GCP, ICH, and regulatory guidelines</span></div></li>
+        </ul>
+      </div>
+      <div class="quad-card">
+        <h3>Key CDM Activities</h3>
+        <div class="activity-flow">
+          <span class="activity-pill">Plan</span>
+          <span class="activity-pill">Design</span>
+          <span class="activity-pill">Collect</span>
+          <span class="activity-pill">Enter</span>
+          <span class="activity-pill">Validate</span>
+          <span class="activity-pill">Query</span>
+          <span class="activity-pill">Review</span>
+          <span class="activity-pill">Reconcile</span>
+          <span class="activity-pill">Lock</span>
+          <span class="activity-pill">Transfer</span>
+        </div>
+      </div>
+      <div class="quad-card">
+        <h3>CDM Outcomes</h3>
+        <ul>
+          <li><span class="qi">★</span><div><b>High-quality, reliable data</b></div></li>
+          <li><span class="qi">%</span><div><b>Accurate statistical results</b></div></li>
+          <li><span class="qi">✓</span><div><b>Regulatory compliance</b></div></li>
+          <li><span class="qi">◆</span><div><b>Better decisions</b><span class="d">for patient safety and study success</span></div></li>
+        </ul>
+      </div>
+      <div class="quad-card">
+        <h3>Tools Commonly Used</h3>
+        <ul>
+          <li><span class="qi">Xl</span><div><b>Excel</b><span class="d">Data cleaning, reports</span></div></li>
+          <li><span class="qi">SQ</span><div><b>SQL</b><span class="d">Data extraction</span></div></li>
+          <li><span class="qi">RC</span><div><b>REDCap / OpenClinica</b><span class="d">eCRF / EDC systems</span></div></li>
+          <li><span class="qi">MR</span><div><b>Medidata Rave</b><span class="d">EDC platform</span></div></li>
+          <li><span class="qi">SAS</span><div><b>SAS</b><span class="d">Data analysis support</span></div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-grid">
+    <div>
+      <div class="name">Ayyappa Varaprasad Moganti</div>
+      <div class="role">Business Analyst — Clinical &amp; Regulatory Systems</div>
+    </div>
+    <div class="foot-note">Interactive CDM workflow dashboard, built for portfolio purposes. Content structured around standard clinical data management practice, from study start-up through database lock and statistical handoff.</div>
+  </div>
+</footer>
+
+<script>
+const stages = [
+  { n:1, color:'#1F8A7A', title:'Study Start-up & Planning',
+    activities:['Review protocol, SAP, and other study documents','Define data flow and CDM deliverables','Create the data management plan'],
+    output:'Data Management Plan / CDM Plan',
+    desc:'The blueprint every later stage is measured against — what data gets collected, how, and by whom.',
+    kpis:[
+      {v:'v4.2', l:'Protocol version'},
+      {v:'64', l:'Sites planned'},
+      {v:'Approved', l:'CDM Plan status'},
+      {v:'18 days', l:'Kickoff to plan sign-off'}
+    ] },
+  { n:2, color:'#2E6FB8', title:'CRF/eCRF & Database Design',
+    activities:['Design CRF/eCRF — define variables, formats, and validations','Build the database and edit checks (business rules)','Perform User Acceptance Testing (UAT)'],
+    output:'Validated Database / eCRF',
+    desc:'Turns the plan into a working system, tested before a single real patient record touches it.',
+    kpis:[
+      {v:'38 / 38', l:'eCRF forms built'},
+      {v:'214', l:'Edit checks programmed'},
+      {v:'100%', l:'UAT test cases passed'},
+      {v:'6 wks', l:'Database build time'}
+    ] },
+  { n:3, color:'#6B5FC4', title:'Data Collection',
+    activities:['Sites collect data using CRF/eCRF','Source data verification at the site level','Timely data transfer to the central database'],
+    output:'Collected Data (Raw)',
+    desc:'The moment patient reality first becomes a data point in the system.',
+    kpis:[
+      {v:'64 / 64', l:'Sites activated'},
+      {v:'418', l:'Subjects enrolled'},
+      {v:'91%', l:'Source data verified'},
+      {v:'2.1 days', l:'Avg. site-to-DB transfer lag'}
+    ] },
+  { n:4, color:'#C24E86', title:'Data Entry / Data Import',
+    activities:['Enter data into the database (manual entry or import)','Ensure completeness of transferred data','Capture date, time, and audit trail'],
+    output:'Data Entered (Audit Trail Recorded)',
+    desc:'Every entry — and every change to it — is timestamped and attributable from this point on.',
+    kpis:[
+      {v:'128,540', l:'Records entered'},
+      {v:'1.8 days', l:'Avg. data entry lag'},
+      {v:'100%', l:'Double-key verified'},
+      {v:'0', l:'Missing audit trail flags'}
+    ] },
+  { n:5, color:'#D06C89', title:'Data Validation (Edit Checks)',
+    activities:['System edit checks run to identify potential errors','Missing, inconsistent, or invalid data identified','Prevent incorrect entry in real time'],
+    output:'Edit Check Results (Data Issues Identified)',
+    desc:"The system's own first line of defense, catching problems before a human ever has to.",
+    kpis:[
+      {v:'3,120', l:'Edit checks fired'},
+      {v:'2,955', l:'Auto-resolved'},
+      {v:'165', l:'Flagged for manual review'},
+      {v:'94.7%', l:'Auto-resolution rate'}
+    ] },
+  { n:6, color:'#D99A34', title:'Query Management',
+    activities:['Generate queries for identified data issues','Sites respond with clarifications or updates','Track follow-up and close queries'],
+    output:'Resolved Queries (Query Status Tracked)',
+    desc:'The back-and-forth between data managers and sites that turns a flagged issue into a resolved one.',
+    kpis:[
+      {v:'12', l:'Open queries'},
+      {v:'328', l:'Queries resolved to date'},
+      {v:'3.2 days', l:'Avg. resolution time'},
+      {v:'210', l:'Peak open queries (Month 4)'}
+    ] },
+  { n:7, color:'#B8863B', title:'Data Review & Cleaning',
+    activities:['Review data listings and reports','Check trends, outliers, and inconsistencies','Clean and standardize data'],
+    output:'Clean, Quality Data',
+    desc:'A step back from individual records to look at the dataset as a whole.',
+    kpis:[
+      {v:'42', l:'Listings reviewed'},
+      {v:'96', l:'Outlier flags reviewed'},
+      {v:'3', l:'Data cleaning cycles run'},
+      {v:'99.1%', l:'Fields passing clean checks'}
+    ] },
+  { n:8, color:'#2F9560', title:'Final Data Review & Reconciliation',
+    activities:['Reconcile external data — lab, imaging, ePRO, etc.','Review SAEs, concomitant meds, and protocol deviations','Ensure completeness and consistency'],
+    output:'Fully Reconciled Data',
+    desc:'Everything that lives outside the core EDC — labs, imaging, safety data — gets folded in and checked against it.',
+    kpis:[
+      {v:'97%', l:'External data reconciled'},
+      {v:'38 / 38', l:'SAEs reconciled'},
+      {v:'27', l:'Protocol deviations reviewed'},
+      {v:'0', l:'Unresolved discrepancies'}
+    ] },
+  { n:9, color:'#1F8A7A', title:'Database Lock',
+    activities:['Resolve all outstanding queries','Perform final quality checks','Lock the database — audit trail maintained'],
+    output:'Locked Database',
+    desc:'The point of no return: from here, the data is frozen for analysis.',
+    kpis:[
+      {v:'0', l:'Outstanding queries'},
+      {v:'100%', l:'Final QC pass rate'},
+      {v:'Ready', l:'Lock readiness status'},
+      {v:'On schedule', l:'Vs. planned lock date'}
+    ] },
+  { n:10, color:'#2E6FB8', title:'Data Transfer for Statistical Analysis',
+    activities:['Generate analysis datasets (SDTM/ADaM as applicable)','Transfer data with full documentation','Support statistical analysis'],
+    output:'Analysis Ready Data (SDTM/ADaM)',
+    desc:'The handoff to biostatistics — the reason every prior stage existed.',
+    kpis:[
+      {v:'24', l:'SDTM datasets delivered'},
+      {v:'18', l:'ADaM datasets delivered'},
+      {v:'Passed', l:'Transfer QC status'},
+      {v:'On schedule', l:'Handoff to biostats'}
+    ] },
+];
+
+const stageTrack = document.getElementById('stageTrack');
+const timelineList = document.getElementById('timelineList');
+const stageDetail = document.getElementById('stageDetail');
+const progressFill = document.getElementById('progressFill');
+let current = 0;
+let playing = false;
+let playTimer = null;
+
+stages.forEach((s,i)=>{
+  const chip = document.createElement('div');
+  chip.className = 'stage-chip' + (i===0 ? ' active' : '');
+  chip.innerHTML = `<span class="dot" style="background:${s.color};"></span>${s.n}. ${s.title}`;
+  chip.addEventListener('click', ()=>{ stopPlay(); setStage(i); });
+  stageTrack.appendChild(chip);
+
+  const item = document.createElement('div');
+  item.className = 't-item' + (i===0 ? ' active' : '');
+  item.style.setProperty('--step-color', s.color);
+  item.setAttribute('data-n', s.n);
+  item.innerHTML = `<div class="t-title">${s.title}</div><div class="t-out">→ ${s.output}</div>`;
+  item.addEventListener('click', ()=>{ stopPlay(); setStage(i); });
+  timelineList.appendChild(item);
+});
+
+function renderDetail(i){
+  const s = stages[i];
+  stageDetail.style.setProperty('--step-color', s.color);
+  stageDetail.innerHTML = `
+    <div class="sd-head">
+      <div>
+        <div class="sd-num">${String(s.n).padStart(2,'0')}</div>
+        <div class="sd-title">${s.title}</div>
+      </div>
+      <div class="sd-badge">Stage ${s.n} of 10</div>
+    </div>
+    <div class="sd-body">
+      <div class="sd-activities">
+        <div class="sd-side-label">What happens here</div>
+        <ul>${s.activities.map(a=>`<li>${a}</li>`).join('')}</ul>
+      </div>
+      <div>
+        <div class="sd-side-label">Output / Deliverable</div>
+        <div class="sd-output">${s.output}<div class="desc">${s.desc}</div></div>
+      </div>
+    </div>
+    <div class="sd-kpis">
+      ${s.kpis.map(k=>`<div class="kpi-card"><div class="kv">${k.v}</div><div class="kl">${k.l}</div></div>`).join('')}
+    </div>
+    <div class="sd-nav">
+      <button id="prevBtn" ${i===0 ? 'disabled' : ''}>← Previous stage</button>
+      <button id="nextBtn" ${i===stages.length-1 ? 'disabled' : ''}>Next stage →</button>
+    </div>
+  `;
+  document.getElementById('prevBtn')?.addEventListener('click', ()=>{ stopPlay(); setStage(i-1); });
+  document.getElementById('nextBtn')?.addEventListener('click', ()=>{ stopPlay(); setStage(i+1); });
+}
+
+function setStage(i){
+  if(i < 0 || i >= stages.length) return;
+  current = i;
+  document.querySelectorAll('.stage-chip').forEach((c,idx)=>c.classList.toggle('active', idx===i));
+  document.querySelectorAll('.t-item').forEach((c,idx)=>c.classList.toggle('active', idx===i));
+  progressFill.style.width = `${((i+1)/stages.length)*100}%`;
+  renderDetail(i);
+}
+
+const playBtn = document.getElementById('playBtn');
+function stopPlay(){
+  playing = false;
+  clearInterval(playTimer);
+  playBtn.textContent = '▶  Walk through all 10 stages';
+}
+playBtn.addEventListener('click', ()=>{
+  if(playing){ stopPlay(); return; }
+  playing = true;
+  playBtn.textContent = '⏸  Pause';
+  if(current >= stages.length-1) setStage(0);
+  playTimer = setInterval(()=>{
+    if(current >= stages.length-1){ stopPlay(); return; }
+    setStage(current+1);
+  }, 1800);
+});
+
+setStage(0);
+
+// ---------- STUDY HEALTH CHARTS (dependency-free, no external libraries) ----------
+
+// 1. Enrollment donut (pure SVG)
+function renderDonut(elId, segments, centerValue, centerLabel){
+  const el = document.getElementById(elId);
+  const total = segments.reduce((sum,s)=>sum+s.value,0);
+  const r = 40, cx = 50, cy = 50;
+  const circumference = 2 * Math.PI * r;
+  let offsetAcc = 0;
+  const arcs = segments.map(s=>{
+    const frac = s.value/total;
+    const len = frac * circumference;
+    const arc = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="14"
+      stroke-dasharray="${len} ${circumference-len}" stroke-dashoffset="${-offsetAcc}"
+      transform="rotate(-90 ${cx} ${cy})" stroke-linecap="butt"/>`;
+    offsetAcc += len;
+    return arc;
+  }).join('');
+  el.innerHTML = `
+    <div class="donut-wrap" style="position:relative;">
+      <svg viewBox="0 0 100 100" style="width:180px;height:180px;">${arcs}</svg>
+      <div class="donut-center"><div class="dv">${centerValue}</div><div class="dl">${centerLabel}</div></div>
+    </div>
+    <div class="chart-legend">
+      ${segments.map(s=>`<div class="li"><span class="sw" style="background:${s.color};"></span>${s.label}</div>`).join('')}
+    </div>
+  `;
+}
+renderDonut('enrollChart',
+  [ {label:'Enrolled', value:418, color:'#0E6E73'}, {label:'Screen failures', value:44, color:'#E1E5EC'} ],
+  '418 / 462', 'enrolled');
+
+// 2. Query volume grouped bar chart (CSS bars)
+function renderGroupedBars(elId, labels, seriesA, seriesB, colorA, colorB, labelA, labelB){
+  const el = document.getElementById(elId);
+  const max = Math.max(...seriesA, ...seriesB) * 1.15;
+  const groups = labels.map((lab,i)=>{
+    const hA = Math.round((seriesA[i]/max)*100);
+    const hB = Math.round((seriesB[i]/max)*100);
+    return `<div class="bar-group">
+      <div class="bar" title="${labelA}: ${seriesA[i]}" style="height:${hA}%;background:${colorA};"></div>
+      <div class="bar" title="${labelB}: ${seriesB[i]}" style="height:${hB}%;background:${colorB};"></div>
+    </div>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="bar-chart">${groups}</div>
+    <div class="bar-labels">${labels.map(l=>`<span>${l}</span>`).join('')}</div>
+    <div class="chart-legend">
+      <div class="li"><span class="sw" style="background:${colorA};"></span>${labelA}</div>
+      <div class="li"><span class="sw" style="background:${colorB};"></span>${labelB}</div>
+    </div>
+  `;
+}
+renderGroupedBars('queryChart',
+  ['M1','M2','M3','M4','M5','M6'],
+  [48,62,71,55,38,24],
+  [20,45,58,70,64,52],
+  '#C2862E', '#0E6E73', 'Opened', 'Closed');
+
+// 3. Stage completion horizontal bars
+function renderHBars(elId, rows){
+  const el = document.getElementById(elId);
+  el.innerHTML = `
+    <div class="hbar-chart">
+      ${rows.map(r=>`
+        <div class="hbar-row">
+          <div class="hbar-label">${r.label}</div>
+          <div class="hbar-track"><div class="hbar-fill" style="width:${r.value}%;background:${r.color};"></div></div>
+          <div class="hbar-val">${r.value}%</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+const stageCompletion = [100,100,100,100,100,97,90,84,62,40];
+renderHBars('stageChart', stages.map((s,i)=>({ label:'S'+s.n, value:stageCompletion[i], color:s.color })));
+</script>
+</body>
+</html>

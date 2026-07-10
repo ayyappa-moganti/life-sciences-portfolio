@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ayyappa Varaprasad Moganti — Business Analyst, Clinical & Regulatory Systems</title>
+<meta name="description" content="Portfolio of interactive clinical trial and regulatory systems dashboards by Ayyappa Varaprasad Moganti, Business Analyst in life sciences.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#131B2B; --ink-soft:#28324A; --paper:#F2F4F3; --paper-raised:#FFFFFF;
+    --line:#C9D0D2; --line-soft:#DEE3E4; --muted:#5B6472;
+    --teal:#0E7C86; --teal-deep:#0A5C64; --teal-tint:#E3EFEE;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'IBM Plex Sans',sans-serif; font-size:16px; line-height:1.55; -webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Source Serif 4',serif; margin:0; letter-spacing:-0.01em;}
+  a{color:inherit;}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 32px;}
+  @media (max-width:640px){ .wrap{padding:0 20px;} }
+
+  .doc-header{background:var(--ink); color:#DCE3E6; font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:0.04em; padding:9px 0;}
+  .doc-header .wrap{display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;}
+  .doc-header span{opacity:0.82;}
+  .doc-header .status{color:#6FD1C6; opacity:1; font-weight:600;}
+
+  header.masthead{border-bottom:1px solid var(--line); padding:22px 0; background:var(--paper-raised);}
+  .masthead .wrap{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand .mark{width:30px; height:30px; border:1.5px solid var(--ink); border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Source Serif 4',serif; font-weight:600; font-size:14px;}
+  .brand .name{font-family:'IBM Plex Mono',monospace; font-size:13px;}
+  nav a{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted); text-decoration:none; margin-left:22px;}
+  nav a:hover{color:var(--teal-deep);}
+
+  .hero{padding:72px 0 56px; border-bottom:1px solid var(--line);}
+  .eyebrow{font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:var(--teal-deep); margin-bottom:18px; display:flex; align-items:center; gap:10px;}
+  .eyebrow::before{content:""; width:26px; height:1px; background:var(--teal);}
+  .hero h1{font-size:clamp(30px,4.4vw,48px); font-weight:600; line-height:1.12; max-width:18ch;}
+  .hero p.sub{max-width:60ch; margin-top:20px; font-size:17px; color:var(--ink-soft);}
+  .hero-meta{display:flex; gap:40px; margin-top:34px; flex-wrap:wrap;}
+  .hero-meta .v{font-family:'Source Serif 4',serif; font-size:24px; font-weight:600; color:var(--teal-deep);}
+  .hero-meta .l{font-size:12px; color:var(--muted); margin-top:3px;}
+
+  section{padding:56px 0;}
+  .section-head{margin-bottom:32px;}
+  .section-num{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted); letter-spacing:0.08em;}
+  .section-head h2{font-size:26px; margin-top:6px;}
+  .section-head p{max-width:56ch; color:var(--muted); font-size:14.5px; margin-top:8px;}
+
+  .project-grid{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line);}
+  @media (max-width:800px){ .project-grid{grid-template-columns:1fr;} }
+  .project-card{background:var(--paper-raised); padding:30px 28px; display:flex; flex-direction:column;}
+  .project-card .tag{font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted);}
+  .project-card h3{font-size:20px; margin-top:12px; font-weight:600;}
+  .project-card p{font-size:13.5px; color:var(--ink-soft); margin-top:10px; line-height:1.65; flex:1;}
+  .project-tags{display:flex; flex-wrap:wrap; gap:6px; margin-top:16px;}
+  .project-tags span{font-family:'IBM Plex Mono',monospace; font-size:10.5px; background:var(--teal-tint); color:var(--teal-deep); padding:4px 9px; border-radius:20px;}
+  .project-link{margin-top:22px; display:inline-flex; align-items:center; gap:8px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; background:var(--ink); color:#fff; padding:11px 18px; text-decoration:none; width:fit-content; transition:background .15s;}
+  .project-link:hover{background:var(--teal-deep);}
+
+  .about-panel{border:1px solid var(--line); background:var(--paper-raised); padding:32px 28px; display:grid; grid-template-columns:1fr 1fr; gap:32px;}
+  @media (max-width:760px){ .about-panel{grid-template-columns:1fr;} }
+  .about-panel p{font-size:14.5px; color:var(--ink-soft); line-height:1.7;}
+  .skill-tags{display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;}
+  .skill-tags span{font-family:'IBM Plex Mono',monospace; font-size:11.5px; border:1px solid var(--line); padding:6px 11px; border-radius:20px; color:var(--ink-soft);}
+
+  footer{border-top:1px solid var(--line); padding:44px 0 30px; margin-top:10px;}
+  .foot-cta{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px;}
+  .foot-cta h3{font-size:20px; max-width:22ch;}
+  .foot-cta .foot-note{color:var(--muted); font-size:13.5px; margin-top:8px; max-width:44ch;}
+  .foot-btn{font-family:'IBM Plex Mono',monospace; font-size:13px; background:var(--ink); color:#fff; padding:13px 24px; border:none; text-decoration:none; display:inline-block; white-space:nowrap;}
+  .foot-btn:hover{background:var(--teal-deep);}
+  .foot-meta{margin-top:26px; padding-top:20px; border-top:1px solid var(--line-soft); font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;}
+</style>
+</head>
+<body>
+
+  <div class="doc-header">
+    <div class="wrap">
+      <span>PORTFOLIO/AYYAPPA-MOGANTI/2026</span>
+      <span class="status">● AVAILABLE FOR FREELANCE ENGAGEMENTS</span>
+      <span>LIFE SCIENCES · CLINICAL TRIALS · REGULATORY SYSTEMS</span>
+    </div>
+  </div>
+
+  <header class="masthead">
+    <div class="wrap">
+      <div class="brand">
+        <div class="mark">A</div>
+        <div class="name">Ayyappa Varaprasad Moganti</div>
+      </div>
+      <nav>
+        <a href="#work">Work</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="wrap">
+      <div class="eyebrow">Business Analyst · Clinical &amp; Regulatory Systems</div>
+      <h1>Turning trial data and regulatory workflow into interactive, decision-ready dashboards.</h1>
+      <p class="sub">I work across the clinical trial lifecycle — from clinical data management through regulatory document preparation — building tools that make complex, process-heavy work visible and easier to reason about.</p>
+      <div class="hero-meta">
+        <div><div class="v">2</div><div class="l">Featured interactive dashboards</div></div>
+        <div><div class="v">10+</div><div class="l">CDM &amp; regulatory workflow stages mapped</div></div>
+        <div><div class="v">E2E</div><div class="l">Discovery through commercialization</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="work">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="section-num">FEATURED WORK</div>
+        <h2>Interactive dashboards</h2>
+        <p>Two case studies covering the data-management and regulatory-writing stages of a clinical trial, built end to end — content structure, interaction design, and front-end implementation.</p>
+      </div>
+
+      <div class="project-grid">
+        <div class="project-card">
+          <div class="tag">Case Study 01</div>
+          <h3>Clinical Data Management Workflow</h3>
+          <p>An interactive walkthrough of the 10-stage CDM process — from study start-up through database lock and SDTM/ADaM handoff — with per-stage KPIs, a live study health overview, and a guided autoplay mode.</p>
+          <div class="project-tags"><span>CDM</span><span>EDC</span><span>Query Management</span><span>SDTM/ADaM</span></div>
+          <a class="project-link" href="dashboards/cdm-workflow-dashboard.html">View live dashboard →</a>
+        </div>
+
+        <div class="project-card">
+          <div class="tag">Case Study 02</div>
+          <h3>Regulatory Document Automation</h3>
+          <p>A dashboard exploring where AI removes manual effort from CSR, IB, and NDA/BLA module preparation — covering the drafting pipeline, a live consistency-check simulation, and timeline impact.</p>
+          <div class="project-tags"><span>Regulatory Affairs</span><span>CSR/IB/NDA</span><span>AI-assisted drafting</span></div>
+          <a class="project-link" href="dashboards/reg-doc-ai-dashboard.html">View live dashboard →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="about">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="section-num">ABOUT</div>
+        <h2>Background</h2>
+      </div>
+      <div class="about-panel">
+        <div>
+          <p>I'm a Business Analyst working across clinical data and regulatory systems in pharma and life sciences. My focus is on translating end-to-end trial processes — from discovery through commercialization — into tools and workflows that data managers, regulatory writers, and sponsors can actually use day to day.</p>
+          <p style="margin-top:14px;">These dashboards are portfolio projects built to demonstrate that translation: real domain-accurate process detail, presented through working, interactive front-end builds rather than static slides.</p>
+        </div>
+        <div>
+          <div class="section-num" style="margin-bottom:12px;">FOCUS AREAS</div>
+          <div class="skill-tags">
+            <span>Clinical Data Management</span>
+            <span>Regulatory Affairs</span>
+            <span>CSR / IB / NDA-BLA</span>
+            <span>EDC Systems</span>
+            <span>Process Mapping</span>
+            <span>Stakeholder Dashboards</span>
+            <span>SDTM / ADaM</span>
+            <span>GCP / ICH Compliance</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer id="contact">
+    <div class="wrap">
+      <div class="foot-cta">
+        <div>
+          <h3>Open to freelance and contract work.</h3>
+          <div class="foot-note">Clinical data strategy, regulatory workflow design, and interactive dashboard builds for life sciences teams.</div>
+        </div>
+        <a class="foot-btn" href="mailto:your.email@example.com">Get in touch →</a>
+      </div>
+      <div class="foot-meta">
+        <span>Ayyappa Varaprasad Moganti · Business Analyst</span>
+        <span>Portfolio · 2026</span>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
